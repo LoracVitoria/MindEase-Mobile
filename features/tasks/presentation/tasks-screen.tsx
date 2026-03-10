@@ -25,7 +25,14 @@ function StagePill({
   active: boolean;
   onPress: () => void;
 }) {
-  return <Button title={title} variant={active ? 'primary' : 'secondary'} onPress={onPress} />;
+  return (
+    <Button
+      title={title}
+      variant={active ? 'primary' : 'secondary'}
+      onPress={onPress}
+      style={{ minWidth: 112 }}
+    />
+  );
 }
 
 function TaskRow({
@@ -134,6 +141,11 @@ export function TasksScreen() {
     if (settings.focusMode && stage !== 'doing') return [];
     return list;
   }, [stage, settings.focusMode, tasksStore.tasks]);
+
+  const doneCount = useMemo(
+    () => tasksStore.tasks.filter((t: Task) => t.stage === 'done').length,
+    [tasksStore.tasks]
+  );
 
   const inputStyle = useMemo(
     () => ({
@@ -245,13 +257,12 @@ export function TasksScreen() {
                 ) : (
                   <Button title="Pausar" variant="secondary" onPress={pomodoro.pause} />
                 )}
-                <Button title="Reset" variant="secondary" onPress={pomodoro.reset} />
+                <Button title="Resetar" variant="secondary" onPress={pomodoro.reset} />
                 {settings.complexityLevel === 'advanced' ? (
                   <Button
                     title="Trocar fase"
                     variant="ghost"
                     onPress={pomodoro.switchPhase}
-                    style={{ borderWidth: 1, borderColor: border }}
                   />
                 ) : null}
               </View>
@@ -261,7 +272,7 @@ export function TasksScreen() {
               <Card style={{ gap }}>
                 <Text style={[sectionTitleStyle, { color: foreground }]}>Etapas</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: buttonGap }}>
-                  <StagePill title="A fazer" active={stage === 'todo'} onPress={() => setStage('todo')} />
+                  <StagePill title={'A\u00A0fazer'} active={stage === 'todo'} onPress={() => setStage('todo')} />
                   <StagePill title="Fazendo" active={stage === 'doing'} onPress={() => setStage('doing')} />
                   <StagePill title="Feito" active={stage === 'done'} onPress={() => setStage('done')} />
                 </View>
@@ -358,7 +369,7 @@ export function TasksScreen() {
           </Text>
         }
         ListFooterComponent={
-          settings.complexityLevel === 'advanced' ? (
+          settings.complexityLevel === 'advanced' && !settings.focusMode && stage === 'done' && doneCount > 0 ? (
             <View style={{ marginTop: gap }}>
               <Card style={{ gap }}>
                 <Button

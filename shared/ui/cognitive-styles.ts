@@ -59,7 +59,9 @@ export function useCognitiveContainerStyle(): ViewStyle {
 
   return useMemo(() => {
     return {
-      padding: pad,
+      paddingVertical: pad,
+      // Um pouco menos de borda lateral para caber melhor em telas menores
+      paddingHorizontal: Math.max(10, pad - 2),
     };
   }, [pad]);
 }

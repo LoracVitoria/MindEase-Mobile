@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import Svg, { Circle, Path, Text as SvgText, TSpan } from 'react-native-svg';
 
 import { useThemeColor } from '@/shared/hooks/use-theme-color';
@@ -6,36 +5,50 @@ import { useThemeColor } from '@/shared/hooks/use-theme-color';
 export function MindEaseLogo({
   size = 120,
   transparentBackground = false,
+  showCircleBorder = false,
+  accentColor,
+  foregroundColor,
+  borderColor,
+  backgroundColor,
 }: {
   size?: number;
   transparentBackground?: boolean;
+  showCircleBorder?: boolean;
+  accentColor?: string;
+  foregroundColor?: string;
+  borderColor?: string;
+  backgroundColor?: string;
 }) {
-  const background = useThemeColor({}, 'background');
-  const border = useThemeColor({}, 'border');
-  const foreground = useThemeColor({}, 'foreground');
-  const primary = useThemeColor({}, 'primary');
+  const themeBackground = useThemeColor({}, 'background');
+  const themeBorder = useThemeColor({}, 'border');
+  const themeForeground = useThemeColor({}, 'foreground');
+  const themePrimary = useThemeColor({}, 'primary');
+
+  const background = backgroundColor ?? themeBackground;
+  const border = borderColor ?? themeBorder;
+  const foreground = foregroundColor ?? themeForeground;
+  const primary = accentColor ?? themePrimary;
 
   const circleFill = transparentBackground ? 'transparent' : background;
-
-  const stroke1 = useMemo(() => ({ color: primary, opacity: 0.25 }), [primary]);
-  const stroke2 = useMemo(() => ({ color: primary, opacity: 0.55 }), [primary]);
+  const circleStroke = showCircleBorder ? border : 'none';
+  const circleStrokeWidth = showCircleBorder ? 2 : 0;
 
   return (
     <Svg width={size} height={size} viewBox="0 0 160 160">
-      <Circle cx={80} cy={80} r={72} fill={circleFill} stroke={border} strokeWidth={2} />
+      <Circle cx={80} cy={80} r={72} fill={circleFill} stroke={circleStroke} strokeWidth={circleStrokeWidth} />
 
       <Path
         d="M45 55 Q65 48 80 55 T115 55"
-        stroke={stroke1.color}
-        strokeOpacity={stroke1.opacity}
+        stroke={primary}
+        strokeOpacity={0.25}
         strokeWidth={3.5}
         strokeLinecap="round"
         fill="none"
       />
       <Path
         d="M45 65 Q65 58 80 65 T115 65"
-        stroke={stroke2.color}
-        strokeOpacity={stroke2.opacity}
+        stroke={primary}
+        strokeOpacity={0.55}
         strokeWidth={3.5}
         strokeLinecap="round"
         fill="none"
@@ -53,7 +66,8 @@ export function MindEaseLogo({
         y={105}
         textAnchor="middle"
         fontSize={20}
-        fontWeight={600}
+        fontWeight="600"
+        fontFamily="System"
       >
         <TSpan fill={foreground}>Mind</TSpan>
         <TSpan fill={primary}>Ease</TSpan>
@@ -61,3 +75,5 @@ export function MindEaseLogo({
     </Svg>
   );
 }
+
+export default MindEaseLogo;

@@ -12,7 +12,11 @@ export class AsyncStorageProfileRepository implements ProfileRepository {
   async getPreferences(): Promise<UserPreferences | null> {
     const raw = await AsyncStorage.getItem(KEYS.preferences);
     if (!raw) return null;
-    return JSON.parse(raw) as UserPreferences;
+    try {
+      return JSON.parse(raw) as UserPreferences;
+    } catch {
+      return null;
+    }
   }
 
   async setPreferences(preferences: UserPreferences): Promise<void> {
@@ -22,7 +26,11 @@ export class AsyncStorageProfileRepository implements ProfileRepository {
   async getProfile(): Promise<UserProfile | null> {
     const raw = await AsyncStorage.getItem(KEYS.profile);
     if (!raw) return null;
-    return JSON.parse(raw) as UserProfile;
+    try {
+      return JSON.parse(raw) as UserProfile;
+    } catch {
+      return null;
+    }
   }
 
   async setProfile(profile: UserProfile): Promise<void> {

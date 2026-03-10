@@ -20,7 +20,7 @@ export default function TabsLayout() {
     if (!hydrated) hydrate();
   }, [hydrated, hydrate]);
 
-  const iconSize = 22 + Math.min(3, Math.max(0, contrastIntensity));
+  const iconSize = 24 + Math.min(4, Math.max(0, contrastIntensity));
 
   return (
     <Tabs
@@ -29,12 +29,16 @@ export default function TabsLayout() {
         tabBarActiveTintColor: primary,
         tabBarInactiveTintColor: muted,
         tabBarShowLabel: true,
+        tabBarLabelStyle: { fontSize: 12 },
         tabBarStyle: focusMode
           ? { display: 'none' }
           : {
               backgroundColor: background,
               borderTopColor: border,
               borderTopWidth: 1,
+              paddingTop: 6,
+              paddingBottom: 6,
+              minHeight: 64,
             },
       }}
     >

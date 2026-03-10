@@ -7,6 +7,7 @@ import {
     type ComplexityLevel,
     type NavigationProfile,
   normalizeUserPreferences,
+    type ThemePreference,
     type UserPreferences,
     type ViewMode,
 } from '@/features/profile/domain/entities/user-preferences.entity';
@@ -21,6 +22,7 @@ interface SettingsState extends UserPreferences {
   hydrate: () => Promise<void>;
   patch: (partial: Partial<UserPreferences>) => Promise<void>;
 
+  setThemePreference: (preference: ThemePreference) => Promise<void>;
   setComplexity: (level: ComplexityLevel) => Promise<void>;
   setFocusMode: (enabled: boolean) => Promise<void>;
   setViewMode: (mode: ViewMode) => Promise<void>;
@@ -39,6 +41,8 @@ interface SettingsState extends UserPreferences {
 
 function pickPreferences(state: SettingsState): UserPreferences {
   return {
+    themePreference: state.themePreference,
+
     complexityLevel: state.complexityLevel,
     focusMode: state.focusMode,
     viewMode: state.viewMode,
@@ -64,17 +68,26 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   hydrated: false,
 
   hydrate: async () => {
-    const stored = await getPreferences.execute();
-    set({ ...normalizeUserPreferences(stored), hydrated: true });
+    try {
+      const stored = await getPreferences.execute();
+      set({ ...normalizeUserPreferences(stored), hydrated: true });
+    } catch {
+      set({ ...defaultUserPreferences, hydrated: true });
+    }
   },
 
   patch: async (partial) => {
     const current = pickPreferences(get());
     const merged = normalizeUserPreferences({ ...current, ...partial });
     set(merged);
-    await updatePreferences.execute(merged);
+    try {
+      await updatePreferences.execute(merged);
+    } catch {
+      // mantém no estado mesmo se persistência falhar
+    }
   },
 
+  setThemePreference: async (themePreference) => get().patch({ themePreference }),
   setComplexity: async (complexityLevel) => get().patch({ complexityLevel }),
   setFocusMode: async (focusMode) => get().patch({ focusMode }),
   setViewMode: async (viewMode) => get().patch({ viewMode }),

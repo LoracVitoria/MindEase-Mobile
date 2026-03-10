@@ -34,12 +34,7 @@ export function Button({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth:
-      variant === 'ghost'
-        ? 0
-        : contrastIntensity <= 1
-          ? 1
-          : Math.min(3, contrastIntensity),
+    borderWidth: contrastIntensity <= 1 ? 1 : Math.min(3, contrastIntensity),
     borderColor: border,
   };
 

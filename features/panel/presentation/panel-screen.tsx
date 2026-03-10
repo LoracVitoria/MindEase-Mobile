@@ -69,6 +69,7 @@ export function PanelScreen() {
   const containerStyle = useCognitiveContainerStyle();
   const titleStyle = useCognitiveScreenTitleStyle();
   const textStyle = useCognitiveTextStyle();
+  const sectionTitleStyle = useCognitiveTextStyle({ weight: '700' });
   const { gap } = useCognitiveSpacing();
 
   const settings = useSettingsStore();
@@ -139,7 +140,7 @@ export function PanelScreen() {
       </Card>
 
       <Card style={{ gap }}>
-        <Text style={[useCognitiveTextStyle({ weight: '700' }), { color: foreground }]}>Leitura e espaçamento</Text>
+        <Text style={[sectionTitleStyle, { color: foreground }]}>Leitura e espaçamento</Text>
 
         <StepperRow
           label="Contraste"
@@ -176,7 +177,7 @@ export function PanelScreen() {
       </Card>
 
       <Card style={{ gap }}>
-        <Text style={[useCognitiveTextStyle({ weight: '700' }), { color: foreground }]}>Alertas Cognitivos</Text>
+        <Text style={[sectionTitleStyle, { color: foreground }]}>Alertas Cognitivos</Text>
         <ToggleRow
           label="Ativar alertas"
           value={settings.cognitiveAlertsEnabled}
@@ -209,7 +210,7 @@ export function PanelScreen() {
       </Card>
 
       <Card style={{ gap }}>
-        <Text style={[useCognitiveTextStyle({ weight: '700' }), { color: foreground }]}>Pré-visualização</Text>
+        <Text style={[sectionTitleStyle, { color: foreground }]}>Pré-visualização</Text>
         <Text style={[textStyle, { color: muted }]}>
           O texto e espaçamento aqui refletem suas preferências
         </Text>
@@ -221,7 +222,7 @@ export function PanelScreen() {
             borderColor: border,
           }}
         >
-          <Text style={[useCognitiveTextStyle({ weight: '700' }), { color: foreground }]}>Tarefa atual</Text>
+          <Text style={[sectionTitleStyle, { color: foreground }]}>Tarefa atual</Text>
           <Text style={[textStyle, { color: muted, marginTop: 6 }]}>
             {settings.viewMode === 'summary'
               ? 'Resumo: 1 etapa pendente'

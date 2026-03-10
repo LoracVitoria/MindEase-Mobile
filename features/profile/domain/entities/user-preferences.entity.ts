@@ -1,8 +1,11 @@
 export type ComplexityLevel = 'simple' | 'standard' | 'advanced';
 export type ViewMode = 'summary' | 'detailed';
 export type NavigationProfile = 'guided' | 'standard';
+export type ThemePreference = 'system' | 'light' | 'dark';
 
 export interface UserPreferences {
+  themePreference: ThemePreference;
+
   complexityLevel: ComplexityLevel;
   focusMode: boolean;
   viewMode: ViewMode;
@@ -25,6 +28,8 @@ export interface UserPreferences {
 }
 
 export const defaultUserPreferences: UserPreferences = {
+  themePreference: 'system',
+
   complexityLevel: 'standard',
   focusMode: false,
   viewMode: 'summary',
@@ -74,6 +79,10 @@ function asNavigationProfile(value: unknown, fallback: NavigationProfile): Navig
   return value === 'guided' || value === 'standard' ? value : fallback;
 }
 
+function asThemePreference(value: unknown, fallback: ThemePreference): ThemePreference {
+  return value === 'system' || value === 'light' || value === 'dark' ? value : fallback;
+}
+
 /**
  * Normaliza preferências vindas do storage, aplicando defaults, clamping e migração
  * Também faz migração do antigo `highContrast: boolean` para `contrastIntensity`
@@ -87,6 +96,11 @@ export function normalizeUserPreferences(input: unknown): UserPreferences {
 
   return {
     ...defaultUserPreferences,
+    themePreference: asThemePreference(
+      (raw as any).themePreference,
+      defaultUserPreferences.themePreference
+    ),
+
     complexityLevel: asComplexityLevel(raw.complexityLevel, defaultUserPreferences.complexityLevel),
     focusMode: asBoolean(raw.focusMode, defaultUserPreferences.focusMode),
     viewMode: asViewMode(raw.viewMode, defaultUserPreferences.viewMode),

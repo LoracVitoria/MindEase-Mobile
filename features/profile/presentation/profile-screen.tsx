@@ -30,6 +30,7 @@ export function ProfileScreen() {
   const containerStyle = useCognitiveContainerStyle();
   const titleStyle = useCognitiveScreenTitleStyle();
   const textStyle = useCognitiveTextStyle();
+  const sectionTitleStyle = useCognitiveTextStyle({ weight: '600' });
   const { gap } = useCognitiveSpacing();
 
   const settings = useSettingsStore();
@@ -72,7 +73,7 @@ export function ProfileScreen() {
     return (
       <SafeAreaWrapper backgroundColor={background} style={containerStyle}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-          <MindEaseLogo size={112} />
+          <MindEaseLogo size={132} />
           <Text style={[textStyle, { color: muted }]}>Carregando perfil…</Text>
         </View>
       </SafeAreaWrapper>
@@ -121,13 +122,38 @@ export function ProfileScreen() {
           title="Salvar perfil"
           onPress={async () => {
             await updateProfile.execute(profile);
-            Alert.alert('Pronto', 'Perfil salvo');
+            Alert.alert('Pronto', 'Perfil salvo!');
           }}
         />
         </Card>
 
         <Card style={{ gap }}>
         <Text style={[textStyle, { color: muted }]}>Configurações persistentes</Text>
+
+        <View style={{ gap: 10 }}>
+          <Text style={[sectionTitleStyle, { color: foreground }]}>Tema</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+            <Button
+              title="Sistema"
+              variant={settings.themePreference === 'system' ? 'primary' : 'secondary'}
+              onPress={() => void settings.setThemePreference('system')}
+              style={{ minWidth: 110 }}
+            />
+            <Button
+              title="Claro"
+              variant={settings.themePreference === 'light' ? 'primary' : 'secondary'}
+              onPress={() => void settings.setThemePreference('light')}
+              style={{ minWidth: 110 }}
+            />
+            <Button
+              title="Escuro"
+              variant={settings.themePreference === 'dark' ? 'primary' : 'secondary'}
+              onPress={() => void settings.setThemePreference('dark')}
+              style={{ minWidth: 110 }}
+            />
+          </View>
+          <Text style={[textStyle, { color: muted }]}>Escolha “Sistema” para seguir o tema do dispositivo</Text>
+        </View>
 
         <ToggleRow
           label="Modo foco"

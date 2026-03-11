@@ -27,9 +27,10 @@ export default function TabsLayout() {
     // Em modo foco, o app deve ficar somente na tela de tarefas.
     // Segments típicos: ['(tabs)', 'tasks'] | ['(tabs)', 'index'] | ['(tabs)', 'profile']
     if (!focusMode) return;
-    if (segments?.[0] !== '(tabs)') return;
-    if (segments?.[1] === 'tasks') return;
-    router.replace('/tasks');
+    // Às vezes o path sem grupo ('/tasks') pode não resolver como esperado.
+    // Usamos a rota explícita do grupo para garantir o redirecionamento.
+    if (segments?.[0] === '(tabs)' && segments?.[1] === 'tasks') return;
+    router.replace('/(tabs)/tasks');
   }, [focusMode, router, segments]);
 
   const iconSize = 24 + Math.min(4, Math.max(0, contrastIntensity));

@@ -8,9 +8,10 @@ import { useSettingsStore } from '@/shared/stores/settings-store';
 import { useTasksStore } from '@/shared/stores/tasks-store';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
-import { useCognitiveContainerStyle, useCognitiveScreenTitleStyle, useCognitiveSpacing, useCognitiveTextStyle } from '@/shared/ui/cognitive-styles';
+import { useCognitiveScreenTitleStyle, useCognitiveSpacing, useCognitiveTextStyle } from '@/shared/ui/cognitive-styles';
 import { SafeTextInput } from '@/shared/ui/safe-text-input';
 import SafeAreaWrapper from '@/shared/ui/safe-area-wrapper';
+import { ToggleRow } from '@/shared/ui/toggle-row';
 import { formatMinutesSeconds } from '@/shared/utils/time';
 
 import { type ChecklistTemplate, type Task, type TaskKind, type TaskStage } from '@/features/tasks/domain/entities/task.entity';
@@ -250,11 +251,10 @@ export function TasksScreen() {
   const muted = useThemeColor({}, 'muted');
   const border = useThemeColor({}, 'border');
 
-  const containerStyle = useCognitiveContainerStyle();
   const titleStyle = useCognitiveScreenTitleStyle();
   const textStyle = useCognitiveTextStyle();
   const sectionTitleStyle = useCognitiveTextStyle({ weight: '700' });
-  const { gap, buttonGap } = useCognitiveSpacing();
+  const { gap, buttonGap, pad } = useCognitiveSpacing();
 
   const settings = useSettingsStore();
   const tasksStore = useTasksStore();
@@ -369,12 +369,19 @@ export function TasksScreen() {
   }
 
   return (
-    <SafeAreaWrapper backgroundColor={background} edges={['top', 'left', 'right']}>
+    <SafeAreaWrapper
+      backgroundColor={background}
+      edges={settings.focusMode ? ['top', 'bottom', 'left', 'right'] : ['top', 'left', 'right']}
+    >
       <FlatList
         data={tasks}
         keyExtractor={(t) => t.id}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[{ paddingBottom: tabBarHeight + 24 }, containerStyle]}
+        contentContainerStyle={{
+          paddingTop: pad,
+          paddingHorizontal: Math.max(10, pad - 2),
+          paddingBottom: tabBarHeight + 24 + pad,
+        }}
         ItemSeparatorComponent={() => <View style={{ height: gap }} />}
         ListHeaderComponent={
           <View style={{ gap, marginBottom: gap }}>
@@ -382,6 +389,44 @@ export function TasksScreen() {
             <Text style={[textStyle, { color: muted }]}>
               Kanban simplificado com Pomodoro adaptado para foco
             </Text>
+
+            {settings.focusMode ? (
+              <Card style={{ gap }}>
+                <ToggleRow
+                  label="Modo foco"
+                  value={settings.focusMode}
+                  onChange={settings.setFocusMode}
+                  description="Layout mais simples e menos distrações"
+                />
+
+                <Text style={[textStyle, { color: muted }]}>
+                  Dica: mantenha uma tarefa em &quot;Fazendo&quot; e use o Pomodoro para dar pequenos passos
+                </Text>
+
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: buttonGap }}>
+                  <Button title="Ir para Fazendo" variant="secondary" onPress={() => setStage('doing')} />
+                </View>
+
+                {focusSuggestions.length > 0 ? (
+                  <View style={{ gap: 10 }}>
+                    <Text style={[textStyle, { color: muted }]}>Sugestões para começar:</Text>
+                    {focusSuggestions.map((t: Task) => (
+                      <Button
+                        key={t.id}
+                        title={`Começar: ${t.title}`}
+                        variant="secondary"
+                        onPress={() =>
+                          maybeConfirmTransition(t, 'doing', () => {
+                            setStage('doing');
+                            void tasksStore.moveTask(t.id, 'doing');
+                          })
+                        }
+                      />
+                    ))}
+                  </View>
+                ) : null}
+              </Card>
+            ) : null}
 
             {settings.complexityLevel !== 'simple' ? (
               <Card style={{ gap }}>
@@ -469,11 +514,7 @@ export function TasksScreen() {
               <Card style={{ gap, flex: 1, minWidth: 0 }}>
                 <Text style={[sectionTitleStyle, { color: foreground }]}>Etapas</Text>
                 <Text style={[textStyle, { color: muted }]}>Selecione para filtrar as tarefas</Text>
-                {settings.focusMode ? (
-                  <Text style={[textStyle, { color: muted }]}>
-                    Modo foco: layout mais simples e menos distrações (as tarefas continuam visíveis)
-                  </Text>
-                ) : null}
+
 
                 <View style={{ flex: 1 }} />
 
@@ -503,37 +544,6 @@ export function TasksScreen() {
               </Card>
             </View>
 
-            {settings.focusMode ? (
-              <Card style={{ gap }}>
-                <Text style={[sectionTitleStyle, { color: foreground }]}>Modo foco</Text>
-                <Text style={[textStyle, { color: muted }]}>
-                  Dica: mantenha uma tarefa em &quot;Fazendo&quot; e use o Pomodoro para dar pequenos passos
-                </Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: buttonGap }}>
-                  <Button title="Ir para Fazendo" variant="secondary" onPress={() => setStage('doing')} />
-                  <Button title="Desativar foco" variant="ghost" onPress={() => settings.setFocusMode(false)} />
-                </View>
-
-                {focusSuggestions.length > 0 ? (
-                  <View style={{ gap: 10 }}>
-                    <Text style={[textStyle, { color: muted }]}>Sugestões para começar:</Text>
-                    {focusSuggestions.map((t: Task) => (
-                      <Button
-                        key={t.id}
-                        title={`Começar: ${t.title}`}
-                        variant="secondary"
-                        onPress={() =>
-                          maybeConfirmTransition(t, 'doing', () => {
-                            setStage('doing');
-                            void tasksStore.moveTask(t.id, 'doing');
-                          })
-                        }
-                      />
-                    ))}
-                  </View>
-                ) : null}
-              </Card>
-            ) : null}
           </View>
         }
         renderItem={({ item }) => (
@@ -562,16 +572,7 @@ export function TasksScreen() {
           </Text>
         }
         ListFooterComponent={
-          settings.focusMode ? (
-            <View style={{ marginTop: gap }}>
-              <Button
-                title="Sair do modo foco"
-                variant="secondary"
-                onPress={() => settings.setFocusMode(false)}
-                style={{ alignSelf: 'stretch' }}
-              />
-            </View>
-          ) : settings.complexityLevel === 'advanced' && stage === 'done' && doneCount > 0 ? (
+          settings.complexityLevel === 'advanced' && stage === 'done' && doneCount > 0 ? (
             <View style={{ marginTop: gap }}>
               <Card style={{ gap }}>
                 <Button title="Limpar concluídas" variant="secondary" onPress={() => tasksStore.clearDone()} />

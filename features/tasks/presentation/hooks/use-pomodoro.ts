@@ -23,10 +23,11 @@ export function usePomodoro() {
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    // Mantém o contador coerente ao trocar de fase ou ao alterar a configuração.
+    // Não sobrescreve o tempo enquanto estiver rodando.
+    if (isRunning) return;
     setRemainingSeconds(phase === 'focus' ? config.focusMinutes * 60 : config.breakMinutes * 60);
-    // não re-inicia automaticamente se estiver rodando
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config.focusMinutes, config.breakMinutes]);
+  }, [config.breakMinutes, config.focusMinutes, isRunning, phase]);
 
   useEffect(() => {
     if (!isRunning) {
@@ -36,7 +37,7 @@ export function usePomodoro() {
     }
 
     tickRef.current = setInterval(() => {
-      setRemainingSeconds((s) => s - 1);
+      setRemainingSeconds((s) => Math.max(0, s - 1));
     }, 1000);
 
     return () => {

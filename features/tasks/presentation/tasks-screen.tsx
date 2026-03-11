@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, Text, TextInput, View, type ViewStyle } from 'react-native';
+import { Alert, FlatList, Pressable, Text, View, type ViewStyle } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 
@@ -9,12 +9,19 @@ import { useTasksStore } from '@/shared/stores/tasks-store';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { useCognitiveContainerStyle, useCognitiveScreenTitleStyle, useCognitiveSpacing, useCognitiveTextStyle } from '@/shared/ui/cognitive-styles';
+import { SafeTextInput } from '@/shared/ui/safe-text-input';
 import SafeAreaWrapper from '@/shared/ui/safe-area-wrapper';
 import { formatMinutesSeconds } from '@/shared/utils/time';
 
-import { type ChecklistTemplate, type Task, type TaskStage } from '@/features/tasks/domain/entities/task.entity';
+import { type ChecklistTemplate, type Task, type TaskKind, type TaskStage } from '@/features/tasks/domain/entities/task.entity';
 import { useCognitiveTaskAlert } from '@/features/tasks/presentation/hooks/use-cognitive-task-alert';
 import { usePomodoro } from '@/features/tasks/presentation/hooks/use-pomodoro';
+
+const KIND_LABEL: Record<TaskKind, string> = {
+  study: 'Estudo',
+  work: 'Trabalho',
+  leisure: 'Lazer',
+};
 
 function StagePill({
   title,
@@ -42,34 +49,87 @@ function StagePill({
 function TaskRow({
   task,
   viewMode,
-  focusMode,
+  selected,
+  onSelect,
   onMove,
   onDelete,
   onToggleChecklist,
 }: {
   task: Task;
   viewMode: 'summary' | 'detailed';
-  focusMode: boolean;
+  selected: boolean;
+  onSelect: () => void;
   onMove: (stage: TaskStage) => void;
   onDelete: () => void;
   onToggleChecklist: (itemId: string) => void;
 }) {
   const foreground = useThemeColor({}, 'foreground');
   const muted = useThemeColor({}, 'muted');
-  const danger = useThemeColor({}, 'danger');
+  const primary = useThemeColor({}, 'primary');
+  const dangerBorder = useThemeColor({ dark: '#FF2D2D' }, 'danger');
   const border = useThemeColor({}, 'border');
+  const successBorder = useThemeColor({ dark: '#22C55E' }, 'success');
   const { gap, buttonGap } = useCognitiveSpacing();
   const titleStyle = useCognitiveTextStyle({ weight: '700' });
   const textStyle = useCognitiveTextStyle();
+
+  const tagTextStyle = useMemo(
+    () => ({
+      ...textStyle,
+      fontSize: Math.max(12, (textStyle.fontSize ?? 16) - 3),
+      lineHeight: Math.max(14, (textStyle.lineHeight ?? 22) - 6),
+      fontWeight: '700' as const,
+    }),
+    [textStyle]
+  );
 
   const checklistDone = task.checklist.filter((i) => i.done).length;
 
   return (
     <Card style={{ gap }}>
-      <Text style={[titleStyle, { color: foreground }]}>{task.title}</Text>
-      {!focusMode ? (
-        <Text style={[textStyle, { color: muted }]}>Etapa: {task.stage.toUpperCase()}</Text>
-      ) : null}
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, width: '100%' }}>
+        <Text style={[titleStyle, { color: foreground, flex: 1 }]}>{task.title}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View
+              style={{
+                borderWidth: 1,
+                borderColor: border,
+                borderRadius: 999,
+                paddingHorizontal: 10,
+                paddingVertical: 2,
+              }}
+            >
+              <Text style={[tagTextStyle, { color: muted }]}>{KIND_LABEL[task.kind]}</Text>
+            </View>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={selected ? 'Desmarcar tarefa' : 'Selecionar tarefa'}
+              accessibilityState={{ selected }}
+              onPress={onSelect}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: border,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <View
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 9,
+                  borderWidth: 2,
+                  borderColor: selected ? primary : muted,
+                  backgroundColor: selected ? primary : 'transparent',
+                }}
+              />
+            </Pressable>
+          </View>
+      </View>
 
       {viewMode === 'detailed' && task.checklist.length > 0 ? (
         <View style={{ gap: 8 }}>
@@ -97,11 +157,88 @@ function TaskRow({
         </View>
       ) : null}
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: buttonGap }}>
-        {task.stage !== 'todo' ? <Button title="Voltar" variant="secondary" onPress={() => onMove('todo')} /> : null}
-        {task.stage !== 'doing' ? <Button title="Fazer agora" variant="secondary" onPress={() => onMove('doing')} /> : null}
-        {task.stage !== 'done' ? <Button title="Concluir" variant="secondary" onPress={() => onMove('done')} /> : null}
-        <Button title="Excluir" variant="ghost" onPress={onDelete} style={{ borderWidth: 1, borderColor: danger }} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'nowrap',
+              gap: Math.min(buttonGap, 8),
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+              width: '100%',
+            }}
+          >
+          {task.stage === 'todo' ? (
+              <>
+                <Button
+                  title="Excluir"
+                  variant="ghost"
+                  onPress={onDelete}
+                  style={{ borderWidth: 2, borderColor: dangerBorder, flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minWidth: 0, paddingHorizontal: 10 }}
+                  textNumberOfLines={1}
+                  textEllipsizeMode="tail"
+                />
+                <Button
+                  title="Começar"
+                  variant="secondary"
+                  onPress={() => onMove('doing')}
+                  style={{ borderColor: successBorder, flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minWidth: 0, paddingHorizontal: 10 }}
+                  textNumberOfLines={1}
+                  textEllipsizeMode="tail"
+                />
+              </>
+          ) : null}
+
+          {task.stage === 'doing' ? (
+            <>
+              <Button
+                  title="Excluir"
+                  variant="ghost"
+                  onPress={onDelete}
+                  style={{ borderWidth: 2, borderColor: dangerBorder, flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minWidth: 0, paddingHorizontal: 10 }}
+                  textNumberOfLines={1}
+                  textEllipsizeMode="tail"
+                />
+                <Button
+                title="Concluir"
+                variant="secondary"
+                onPress={() => onMove('done')}
+                  style={{ borderColor: successBorder, flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minWidth: 0, paddingHorizontal: 10 }}
+                  textNumberOfLines={1}
+                  textEllipsizeMode="tail"
+              />
+                <Button
+                  title="Retornar"
+                  variant="secondary"
+                  onPress={() => onMove('todo')}
+                  style={{ flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minWidth: 0, paddingHorizontal: 10 }}
+                  textNumberOfLines={1}
+                  textEllipsizeMode="tail"
+                />
+            </>
+          ) : null}
+
+          {task.stage === 'done' ? (
+              <>
+                <Button
+                  title="Excluir"
+                  variant="ghost"
+                  onPress={onDelete}
+                  style={{ borderWidth: 2, borderColor: dangerBorder, flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minWidth: 0, paddingHorizontal: 10 }}
+                  textNumberOfLines={1}
+                  textEllipsizeMode="tail"
+                />
+                <Button
+                  title="Retornar"
+                  variant="secondary"
+                  onPress={() => onMove('doing')}
+                  style={{ flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minWidth: 0, paddingHorizontal: 10 }}
+                  textNumberOfLines={1}
+                  textEllipsizeMode="tail"
+                />
+              </>
+          ) : null}
+          </View>
       </View>
     </Card>
   );
@@ -130,6 +267,7 @@ export function TasksScreen() {
   const [stage, setStage] = useState<TaskStage>('todo');
   const [title, setTitle] = useState('');
   const [template, setTemplate] = useState<ChecklistTemplate>('study');
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!settings.hydrated) settings.hydrate();
@@ -245,11 +383,73 @@ export function TasksScreen() {
               Kanban simplificado com Pomodoro adaptado para foco
             </Text>
 
+            {settings.complexityLevel !== 'simple' ? (
+              <Card style={{ gap }}>
+                <Text style={[sectionTitleStyle, { color: foreground }]}>Nova tarefa</Text>
+                <SafeTextInput
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder="Ex.: Estudar matemática"
+                  placeholderTextColor={muted}
+                  style={[inputStyle, textStyle]}
+                />
+
+                <View style={{ flexDirection: 'row', flexWrap: 'nowrap', gap: Math.min(buttonGap, 8), width: '100%' }}>
+                  <Button
+                    title="Estudo"
+                    variant={template === 'study' ? 'primary' : 'secondary'}
+                    onPress={() => setTemplate('study')}
+                    style={{ flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minWidth: 0, paddingHorizontal: 10 }}
+                    textNumberOfLines={1}
+                    textEllipsizeMode="tail"
+                  />
+                  <Button
+                    title="Trabalho"
+                    variant={template === 'work' ? 'primary' : 'secondary'}
+                    onPress={() => setTemplate('work')}
+                    style={{ flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minWidth: 0, paddingHorizontal: 10 }}
+                    textNumberOfLines={1}
+                    textEllipsizeMode="tail"
+                  />
+                  <Button
+                    title="Lazer"
+                    variant={template === 'none' ? 'primary' : 'secondary'}
+                    onPress={() => setTemplate('none')}
+                    style={{ flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minWidth: 0, paddingHorizontal: 10 }}
+                    textNumberOfLines={1}
+                    textEllipsizeMode="tail"
+                  />
+                </View>
+
+                <Button
+                  title="Adicionar"
+                  variant="secondary"
+                  onPress={async () => {
+                    const trimmed = title.trim();
+                    if (!trimmed) return;
+                    await tasksStore.createTask(trimmed, template);
+                    setTitle('');
+                  }}
+                />
+              </Card>
+            ) : (
+              <Card style={{ gap }}>
+                <Text style={[sectionTitleStyle, { color: foreground }]}>Adicionar tarefa</Text>
+                <Text style={[textStyle, { color: muted }]}>Aumente a complexidade para criar tarefas por aqui</Text>
+                <Button
+                  title="Mudar para Padrão"
+                  variant="secondary"
+                  onPress={() => settings.setComplexity('standard')}
+                />
+              </Card>
+            )}
+
             <View style={{ flexDirection: 'row', flexWrap: 'nowrap', gap, alignItems: 'stretch' }}>
               <Card style={{ gap, flex: 1, minWidth: 0 }}>
                 <Text style={[sectionTitleStyle, { color: foreground }]}>Pomodoro</Text>
                 <Text style={[textStyle, { color: muted }]}>
-                  Fase: {pomodoro.phase === 'focus' ? 'Foco' : 'Pausa'} • {formatMinutesSeconds(pomodoro.remainingSeconds)}
+                  Fase:{'\n'}
+                  {pomodoro.phase === 'focus' ? 'Foco' : 'Pausa'} • {formatMinutesSeconds(pomodoro.remainingSeconds)}
                 </Text>
                 <View style={{ flex: 1 }} />
 
@@ -268,6 +468,7 @@ export function TasksScreen() {
 
               <Card style={{ gap, flex: 1, minWidth: 0 }}>
                 <Text style={[sectionTitleStyle, { color: foreground }]}>Etapas</Text>
+                <Text style={[textStyle, { color: muted }]}>Selecione para filtrar as tarefas</Text>
                 {settings.focusMode ? (
                   <Text style={[textStyle, { color: muted }]}>
                     Modo foco: layout mais simples e menos distrações (as tarefas continuam visíveis)
@@ -322,7 +523,10 @@ export function TasksScreen() {
                         title={`Começar: ${t.title}`}
                         variant="secondary"
                         onPress={() =>
-                          maybeConfirmTransition(t, 'doing', () => tasksStore.moveTask(t.id, 'doing'))
+                          maybeConfirmTransition(t, 'doing', () => {
+                            setStage('doing');
+                            void tasksStore.moveTask(t.id, 'doing');
+                          })
                         }
                       />
                     ))}
@@ -330,69 +534,22 @@ export function TasksScreen() {
                 ) : null}
               </Card>
             ) : null}
-
-            {settings.complexityLevel !== 'simple' ? (
-              <Card style={{ gap }}>
-                <Text style={[sectionTitleStyle, { color: foreground }]}>Nova tarefa</Text>
-                <TextInput
-                  value={title}
-                  onChangeText={setTitle}
-                  placeholder="Ex.: Estudar matemática"
-                  placeholderTextColor={muted}
-                  style={[inputStyle, textStyle]}
-                />
-
-                <View style={{ flexDirection: 'row', flexWrap: 'nowrap', gap: buttonGap }}>
-                  <Button
-                    title={template === 'study' ? 'Estudo' : 'Estudo'}
-                    variant={template === 'study' ? 'primary' : 'secondary'}
-                    onPress={() => setTemplate('study')}
-                    style={{ flex: 1, minWidth: 0 }}
-                  />
-                  <Button
-                    title={template === 'work' ? 'Trabalho' : 'Trabalho'}
-                    variant={template === 'work' ? 'primary' : 'secondary'}
-                    onPress={() => setTemplate('work')}
-                    style={{ flex: 1, minWidth: 0 }}
-                  />
-                  <Button
-                    title={template === 'none' ? 'Lazer' : 'Lazer'}
-                    variant={template === 'none' ? 'primary' : 'secondary'}
-                    onPress={() => setTemplate('none')}
-                    style={{ flex: 1, minWidth: 0 }}
-                  />
-                </View>
-
-                <Button
-                  title="Adicionar"
-                  variant="secondary"
-                  onPress={async () => {
-                    const trimmed = title.trim();
-                    if (!trimmed) return;
-                    await tasksStore.createTask(trimmed, template);
-                    setTitle('');
-                  }}
-                />
-              </Card>
-            ) : (
-              <Card style={{ gap }}>
-                <Text style={[sectionTitleStyle, { color: foreground }]}>Adicionar tarefa</Text>
-                <Text style={[textStyle, { color: muted }]}>Aumente a complexidade para criar tarefas por aqui</Text>
-                <Button
-                  title="Mudar para Padrão"
-                  variant="secondary"
-                  onPress={() => settings.setComplexity('standard')}
-                />
-              </Card>
-            )}
           </View>
         }
         renderItem={({ item }) => (
           <TaskRow
             task={item}
             viewMode={settings.viewMode}
-            focusMode={settings.focusMode}
-            onMove={(s) => maybeConfirmTransition(item, s, () => tasksStore.moveTask(item.id, s))}
+            selected={selectedTaskId === item.id}
+            onSelect={() =>
+              setSelectedTaskId((current) => (current === item.id ? null : item.id))
+            }
+            onMove={(nextStage) =>
+              maybeConfirmTransition(item, nextStage, () => {
+                setStage(nextStage);
+                void tasksStore.moveTask(item.id, nextStage);
+              })
+            }
             onDelete={() => tasksStore.deleteTask(item.id)}
             onToggleChecklist={(itemId) => tasksStore.toggleChecklistItem(item.id, itemId)}
           />

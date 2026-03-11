@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 
 import { useThemeColor } from '@/shared/hooks/use-theme-color';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { useCognitiveContainerStyle, useCognitiveScreenTitleStyle, useCognitiveSpacing, useCognitiveTextStyle } from '@/shared/ui/cognitive-styles';
+import { SafeTextInput } from '@/shared/ui/safe-text-input';
 import SafeAreaWrapper from '@/shared/ui/safe-area-wrapper';
 import { ToggleRow } from '@/shared/ui/toggle-row';
 import { MindEaseLogo } from '@/shared/ui/mindease-logo';
@@ -101,7 +102,7 @@ export function ProfileScreen() {
         <Card style={{ gap }}>
         <Text style={[cardHeaderStyle, { color: foreground }]}>Perfil</Text>
         <Text style={[fieldLabelStyle, { color: foreground }]}>Nome de exibição</Text>
-        <TextInput
+        <SafeTextInput
           value={profile.displayName}
           onChangeText={(t) => setProfile((p) => ({ ...p, displayName: t }))}
           style={[inputStyle, textStyle]}
@@ -110,7 +111,7 @@ export function ProfileScreen() {
         />
 
         <Text style={[fieldLabelStyle, { color: foreground }]}>Necessidades específicas</Text>
-        <TextInput
+        <SafeTextInput
           value={profile.needsNotes}
           onChangeText={(t) => setProfile((p) => ({ ...p, needsNotes: t }))}
           style={[inputStyle, textStyle, { minHeight: 80 }]}
@@ -120,7 +121,7 @@ export function ProfileScreen() {
         />
 
         <Text style={[fieldLabelStyle, { color: foreground }]}>Rotinas de estudo, trabalho ou lazer</Text>
-        <TextInput
+        <SafeTextInput
           value={profile.routinesNotes}
           onChangeText={(t) => setProfile((p) => ({ ...p, routinesNotes: t }))}
           style={[inputStyle, textStyle, { minHeight: 80 }]}

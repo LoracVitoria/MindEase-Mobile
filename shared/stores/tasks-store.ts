@@ -6,6 +6,7 @@ import {
     buildChecklistTemplate,
     type ChecklistTemplate,
     type Task,
+  type TaskKind,
     type TaskStage,
 } from '@/features/tasks/domain/entities/task.entity';
 import { AsyncStorageTasksRepository } from '@/features/tasks/infrastructure/repositories/async-storage-tasks.repository';
@@ -16,6 +17,23 @@ const saveTasks = saveTasksUsecase(repository);
 
 function uid() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function kindFromTemplate(template: ChecklistTemplate): TaskKind {
+  if (template === 'study') return 'study';
+  if (template === 'work') return 'work';
+  return 'leisure';
+}
+
+function inferKindFromChecklist(task: Task): TaskKind {
+  // Migração leve para tarefas antigas (antes de existir kind)
+  // Heurística baseada nos templates atuais.
+  const labels = task.checklist?.map((i) => i.label.toLowerCase()) ?? [];
+  if (labels.some((l) => l.includes('separar material'))) return 'study';
+  if (labels.some((l) => l.includes('estudar 25 minutos'))) return 'study';
+  if (labels.some((l) => l.includes('definir próximo passo'))) return 'work';
+  if (labels.some((l) => l.includes('executar'))) return 'work';
+  return 'leisure';
 }
 
 interface TasksState {
@@ -36,7 +54,20 @@ export const useTasksStore = create<TasksState>((set, get) => ({
 
   hydrate: async () => {
     const tasks = await getTasks.execute();
-    set({ tasks, hydrated: true });
+
+    // Migra tarefas antigas sem o campo `kind`.
+    const migrated = tasks.map((t) => {
+      if ((t as unknown as { kind?: TaskKind }).kind) return t;
+      return { ...t, kind: inferKindFromChecklist(t) };
+    });
+
+    set({ tasks: migrated, hydrated: true });
+
+    // Persiste apenas se houve mudança.
+    const changed = migrated.some((t, idx) => (tasks[idx] as any)?.kind !== (t as any).kind);
+    if (changed) {
+      await saveTasks.execute(migrated);
+    }
   },
 
   createTask: async (title, template) => {
@@ -45,6 +76,7 @@ export const useTasksStore = create<TasksState>((set, get) => ({
       id: uid(),
       title: title.trim(),
       stage: 'todo',
+      kind: kindFromTemplate(template),
       checklist: buildChecklistTemplate(template),
       createdAt: now,
       updatedAt: now,

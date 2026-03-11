@@ -1,5 +1,7 @@
 export type TaskStage = 'todo' | 'doing' | 'done';
 
+export type TaskKind = 'study' | 'work' | 'leisure';
+
 export interface ChecklistItem {
   id: string;
   label: string;
@@ -10,6 +12,7 @@ export interface Task {
   id: string;
   title: string;
   stage: TaskStage;
+  kind: TaskKind;
   checklist: ChecklistItem[];
   createdAt: number;
   updatedAt: number;

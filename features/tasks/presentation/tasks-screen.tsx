@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Pressable, Text, TextInput, View, type ViewStyle } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 
@@ -20,17 +20,21 @@ function StagePill({
   title,
   active,
   onPress,
+  minWidth = 112,
+  style,
 }: {
   title: string;
   active: boolean;
   onPress: () => void;
+  minWidth?: number;
+  style?: ViewStyle;
 }) {
   return (
     <Button
       title={title}
       variant={active ? 'primary' : 'secondary'}
       onPress={onPress}
-      style={{ minWidth: 112 }}
+      style={{ minWidth, ...(style ?? {}) }}
     />
   );
 }
@@ -132,15 +136,10 @@ export function TasksScreen() {
     if (!tasksStore.hydrated) tasksStore.hydrate();
   }, [settings, tasksStore]);
 
-  useEffect(() => {
-    if (settings.focusMode) setStage('doing');
-  }, [settings.focusMode]);
-
   const tasks = useMemo(() => {
     const list = tasksStore.tasks.filter((t: Task) => t.stage === stage);
-    if (settings.focusMode && stage !== 'doing') return [];
     return list;
-  }, [stage, settings.focusMode, tasksStore.tasks]);
+  }, [stage, tasksStore.tasks]);
 
   const doneCount = useMemo(
     () => tasksStore.tasks.filter((t: Task) => t.stage === 'done').length,
@@ -246,41 +245,74 @@ export function TasksScreen() {
               Kanban simplificado com Pomodoro adaptado para foco
             </Text>
 
-            <Card style={{ gap }}>
-              <Text style={[sectionTitleStyle, { color: foreground }]}>Pomodoro</Text>
-              <Text style={[textStyle, { color: muted }]}>
-                Fase: {pomodoro.phase === 'focus' ? 'Foco' : 'Pausa'} • {formatMinutesSeconds(pomodoro.remainingSeconds)}
-              </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: buttonGap }}>
-                {!pomodoro.isRunning ? (
-                  <Button title="Iniciar" onPress={pomodoro.start} />
-                ) : (
-                  <Button title="Pausar" variant="secondary" onPress={pomodoro.pause} />
-                )}
-                <Button title="Resetar" variant="secondary" onPress={pomodoro.reset} />
-                {settings.complexityLevel === 'advanced' ? (
-                  <Button
-                    title="Trocar fase"
-                    variant="ghost"
-                    onPress={pomodoro.switchPhase}
-                  />
-                ) : null}
-              </View>
-            </Card>
+            <View style={{ flexDirection: 'row', flexWrap: 'nowrap', gap, alignItems: 'stretch' }}>
+              <Card style={{ gap, flex: 1, minWidth: 0 }}>
+                <Text style={[sectionTitleStyle, { color: foreground }]}>Pomodoro</Text>
+                <Text style={[textStyle, { color: muted }]}>
+                  Fase: {pomodoro.phase === 'focus' ? 'Foco' : 'Pausa'} • {formatMinutesSeconds(pomodoro.remainingSeconds)}
+                </Text>
+                <View style={{ flex: 1 }} />
 
-            {!settings.focusMode ? (
-              <Card style={{ gap }}>
-                <Text style={[sectionTitleStyle, { color: foreground }]}>Etapas</Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: buttonGap }}>
-                  <StagePill title={'A\u00A0fazer'} active={stage === 'todo'} onPress={() => setStage('todo')} />
-                  <StagePill title="Fazendo" active={stage === 'doing'} onPress={() => setStage('doing')} />
-                  <StagePill title="Feito" active={stage === 'done'} onPress={() => setStage('done')} />
+                <View style={{ flexDirection: 'column', gap: buttonGap }}>
+                  {!pomodoro.isRunning ? (
+                    <Button title="Iniciar" onPress={pomodoro.start} style={{ alignSelf: 'stretch' }} />
+                  ) : (
+                    <Button title="Pausar" variant="secondary" onPress={pomodoro.pause} style={{ alignSelf: 'stretch' }} />
+                  )}
+                  <Button title="Resetar" variant="secondary" onPress={pomodoro.reset} style={{ alignSelf: 'stretch' }} />
+                  {settings.complexityLevel === 'advanced' ? (
+                    <Button title="Trocar fase" variant="ghost" onPress={pomodoro.switchPhase} style={{ alignSelf: 'stretch' }} />
+                  ) : null}
                 </View>
               </Card>
-            ) : (
+
+              <Card style={{ gap, flex: 1, minWidth: 0 }}>
+                <Text style={[sectionTitleStyle, { color: foreground }]}>Etapas</Text>
+                {settings.focusMode ? (
+                  <Text style={[textStyle, { color: muted }]}>
+                    Modo foco: layout mais simples e menos distrações (as tarefas continuam visíveis)
+                  </Text>
+                ) : null}
+
+                <View style={{ flex: 1 }} />
+
+                <View style={{ flexDirection: 'column', gap: buttonGap }}>
+                  <StagePill
+                    title={'A\u00A0fazer'}
+                    active={stage === 'todo'}
+                    onPress={() => setStage('todo')}
+                    minWidth={0}
+                    style={{ alignSelf: 'stretch' }}
+                  />
+                  <StagePill
+                    title="Fazendo"
+                    active={stage === 'doing'}
+                    onPress={() => setStage('doing')}
+                    minWidth={0}
+                    style={{ alignSelf: 'stretch' }}
+                  />
+                  <StagePill
+                    title="Feito"
+                    active={stage === 'done'}
+                    onPress={() => setStage('done')}
+                    minWidth={0}
+                    style={{ alignSelf: 'stretch' }}
+                  />
+                </View>
+              </Card>
+            </View>
+
+            {settings.focusMode ? (
               <Card style={{ gap }}>
                 <Text style={[sectionTitleStyle, { color: foreground }]}>Modo foco</Text>
-                <Text style={[textStyle, { color: muted }]}>{'Você está vendo apenas a etapa "Fazendo"'}</Text>
+                <Text style={[textStyle, { color: muted }]}>
+                  Dica: mantenha uma tarefa em &quot;Fazendo&quot; e use o Pomodoro para dar pequenos passos
+                </Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: buttonGap }}>
+                  <Button title="Ir para Fazendo" variant="secondary" onPress={() => setStage('doing')} />
+                  <Button title="Desativar foco" variant="ghost" onPress={() => settings.setFocusMode(false)} />
+                </View>
+
                 {focusSuggestions.length > 0 ? (
                   <View style={{ gap: 10 }}>
                     <Text style={[textStyle, { color: muted }]}>Sugestões para começar:</Text>
@@ -296,9 +328,8 @@ export function TasksScreen() {
                     ))}
                   </View>
                 ) : null}
-                <Button title="Ver lista" variant="secondary" onPress={() => settings.setFocusMode(false)} />
               </Card>
-            )}
+            ) : null}
 
             {settings.complexityLevel !== 'simple' ? (
               <Card style={{ gap }}>
@@ -311,21 +342,24 @@ export function TasksScreen() {
                   style={[inputStyle, textStyle]}
                 />
 
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: buttonGap }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'nowrap', gap: buttonGap }}>
                   <Button
                     title={template === 'study' ? 'Estudo' : 'Estudo'}
                     variant={template === 'study' ? 'primary' : 'secondary'}
                     onPress={() => setTemplate('study')}
+                    style={{ flex: 1, minWidth: 0 }}
                   />
                   <Button
                     title={template === 'work' ? 'Trabalho' : 'Trabalho'}
                     variant={template === 'work' ? 'primary' : 'secondary'}
                     onPress={() => setTemplate('work')}
+                    style={{ flex: 1, minWidth: 0 }}
                   />
                   <Button
                     title={template === 'none' ? 'Lazer' : 'Lazer'}
                     variant={template === 'none' ? 'primary' : 'secondary'}
                     onPress={() => setTemplate('none')}
+                    style={{ flex: 1, minWidth: 0 }}
                   />
                 </View>
 
@@ -365,18 +399,25 @@ export function TasksScreen() {
         )}
         ListEmptyComponent={
           <Text style={[textStyle, { color: muted, marginTop: gap }]}>
-            {settings.focusMode ? 'Escolha uma tarefa para "Fazendo"' : 'Nenhuma tarefa nesta etapa'}
+            {settings.focusMode && stage === 'doing' && !doingTask
+              ? 'Escolha uma tarefa para "Fazendo"'
+              : 'Nenhuma tarefa nesta etapa'}
           </Text>
         }
         ListFooterComponent={
-          settings.complexityLevel === 'advanced' && !settings.focusMode && stage === 'done' && doneCount > 0 ? (
+          settings.focusMode ? (
+            <View style={{ marginTop: gap }}>
+              <Button
+                title="Sair do modo foco"
+                variant="secondary"
+                onPress={() => settings.setFocusMode(false)}
+                style={{ alignSelf: 'stretch' }}
+              />
+            </View>
+          ) : settings.complexityLevel === 'advanced' && stage === 'done' && doneCount > 0 ? (
             <View style={{ marginTop: gap }}>
               <Card style={{ gap }}>
-                <Button
-                  title="Limpar concluídas"
-                  variant="secondary"
-                  onPress={() => tasksStore.clearDone()}
-                />
+                <Button title="Limpar concluídas" variant="secondary" onPress={() => tasksStore.clearDone()} />
               </Card>
             </View>
           ) : (

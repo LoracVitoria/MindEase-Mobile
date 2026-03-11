@@ -7,7 +7,6 @@ import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { useCognitiveContainerStyle, useCognitiveScreenTitleStyle, useCognitiveSpacing, useCognitiveTextStyle } from '@/shared/ui/cognitive-styles';
 import SafeAreaWrapper from '@/shared/ui/safe-area-wrapper';
-import { StepperRow } from '@/shared/ui/stepper-row';
 import { ToggleRow } from '@/shared/ui/toggle-row';
 import { MindEaseLogo } from '@/shared/ui/mindease-logo';
 
@@ -31,9 +30,20 @@ export function ProfileScreen() {
   const titleStyle = useCognitiveScreenTitleStyle();
   const textStyle = useCognitiveTextStyle();
   const sectionTitleStyle = useCognitiveTextStyle({ weight: '600' });
+  const fieldLabelStyle = useCognitiveTextStyle({ weight: '700' });
+  const cardHeaderBaseStyle = useCognitiveTextStyle({ weight: '800' });
   const { gap } = useCognitiveSpacing();
 
   const settings = useSettingsStore();
+
+  const cardHeaderStyle = useMemo(
+    () => ({
+      ...cardHeaderBaseStyle,
+      fontSize: (cardHeaderBaseStyle.fontSize ?? 16) + 2,
+      lineHeight: (cardHeaderBaseStyle.lineHeight ?? 22) + 2,
+    }),
+    [cardHeaderBaseStyle]
+  );
 
   const tabBarHeight = useBottomTabBarHeight();
 
@@ -89,7 +99,8 @@ export function ProfileScreen() {
         <Text style={[titleStyle, { color: foreground }]}>Configurações</Text>
 
         <Card style={{ gap }}>
-        <Text style={[textStyle, { color: muted }]}>Nome de exibição</Text>
+        <Text style={[cardHeaderStyle, { color: foreground }]}>Perfil</Text>
+        <Text style={[fieldLabelStyle, { color: foreground }]}>Nome de exibição</Text>
         <TextInput
           value={profile.displayName}
           onChangeText={(t) => setProfile((p) => ({ ...p, displayName: t }))}
@@ -98,17 +109,17 @@ export function ProfileScreen() {
           placeholderTextColor={muted}
         />
 
-        <Text style={[textStyle, { color: muted }]}>Necessidades específicas</Text>
+        <Text style={[fieldLabelStyle, { color: foreground }]}>Necessidades específicas</Text>
         <TextInput
           value={profile.needsNotes}
           onChangeText={(t) => setProfile((p) => ({ ...p, needsNotes: t }))}
           style={[inputStyle, textStyle, { minHeight: 80 }]}
           multiline
-          placeholder="Ex.: Evitar muitos elementos na tela, lembretes suaves…"
+          placeholder="Ex.: Evitar muitos elementos na tela, lembretes suaves, etc"
           placeholderTextColor={muted}
         />
 
-        <Text style={[textStyle, { color: muted }]}>Rotinas de estudo/trabalho</Text>
+        <Text style={[fieldLabelStyle, { color: foreground }]}>Rotinas de estudo, trabalho ou lazer</Text>
         <TextInput
           value={profile.routinesNotes}
           onChangeText={(t) => setProfile((p) => ({ ...p, routinesNotes: t }))}
@@ -128,61 +139,38 @@ export function ProfileScreen() {
         </Card>
 
         <Card style={{ gap }}>
-        <Text style={[textStyle, { color: muted }]}>Configurações persistentes</Text>
+        <Text style={[cardHeaderStyle, { color: foreground }]}>Configurações persistentes</Text>
 
         <View style={{ gap: 10 }}>
           <Text style={[sectionTitleStyle, { color: foreground }]}>Tema</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'nowrap', gap: 10, width: '100%' }}>
             <Button
               title="Sistema"
               variant={settings.themePreference === 'system' ? 'primary' : 'secondary'}
               onPress={() => void settings.setThemePreference('system')}
-              style={{ minWidth: 110 }}
+              style={{ flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minWidth: 0, paddingHorizontal: 10 }}
+              textNumberOfLines={1}
+              textEllipsizeMode="tail"
             />
             <Button
               title="Claro"
               variant={settings.themePreference === 'light' ? 'primary' : 'secondary'}
               onPress={() => void settings.setThemePreference('light')}
-              style={{ minWidth: 110 }}
+              style={{ flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minWidth: 0, paddingHorizontal: 10 }}
+              textNumberOfLines={1}
+              textEllipsizeMode="tail"
             />
             <Button
               title="Escuro"
               variant={settings.themePreference === 'dark' ? 'primary' : 'secondary'}
               onPress={() => void settings.setThemePreference('dark')}
-              style={{ minWidth: 110 }}
+              style={{ flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minWidth: 0, paddingHorizontal: 10 }}
+              textNumberOfLines={1}
+              textEllipsizeMode="tail"
             />
           </View>
           <Text style={[textStyle, { color: muted }]}>Escolha “Sistema” para seguir o tema do dispositivo</Text>
         </View>
-
-        <ToggleRow
-          label="Modo foco"
-          value={settings.focusMode}
-          onChange={settings.setFocusMode}
-          description="Esconde distrações e reduz informações secundárias"
-        />
-
-        <StepperRow
-          label="Contraste"
-          valueLabel={String(settings.contrastIntensity)}
-          onDec={() => settings.setContrastIntensity(Math.max(0, settings.contrastIntensity - 1))}
-          onInc={() => settings.setContrastIntensity(Math.min(3, settings.contrastIntensity + 1))}
-          helper="Aumente para maior definição de bordas e separação de elementos"
-        />
-
-        <ToggleRow
-          label="Alertas cognitivos"
-          value={settings.cognitiveAlertsEnabled}
-          onChange={settings.setCognitiveAlerts}
-          description="Lembra se você ficou muito tempo na mesma tarefa"
-        />
-
-        <ToggleRow
-          label="Avisos de transição"
-          value={settings.transitionCuesEnabled}
-          onChange={settings.setTransitionCues}
-          description="Mensagens suaves em mudanças de fase/atividade"
-        />
 
         <ToggleRow
           label="Animações"
@@ -192,18 +180,12 @@ export function ProfileScreen() {
         />
 
         <ToggleRow
-          label="Hápticos (vibração)"
+          label="Vibração"
           value={settings.hapticsEnabled}
           onChange={settings.setHapticsEnabled}
-          description="Feedback tátil em transições (opcional)"
+          description="Feedback tátil em transições"
         />
 
-        <ToggleRow
-          label="Navegação guiada"
-          value={settings.navigationProfile === 'guided'}
-          onChange={(v) => settings.setNavigationProfile(v ? 'guided' : 'standard')}
-          description="Sugestões e fluxo passo-a-passo em telas principais"
-        />
         </Card>
       </ScrollView>
     </SafeAreaWrapper>

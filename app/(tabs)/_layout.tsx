@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter, useSegments } from 'expo-router';
 import React, { useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -11,6 +11,9 @@ export default function TabsLayout() {
   const hydrated = useSettingsStore((s) => s.hydrated);
   const hydrate = useSettingsStore((s) => s.hydrate);
 
+  const router = useRouter();
+  const segments = useSegments();
+
   const background = useThemeColor({}, 'background');
   const border = useThemeColor({}, 'border');
   const primary = useThemeColor({}, 'primary');
@@ -19,6 +22,15 @@ export default function TabsLayout() {
   useEffect(() => {
     if (!hydrated) hydrate();
   }, [hydrated, hydrate]);
+
+  useEffect(() => {
+    // Em modo foco, o app deve ficar somente na tela de tarefas.
+    // Segments típicos: ['(tabs)', 'tasks'] | ['(tabs)', 'index'] | ['(tabs)', 'profile']
+    if (!focusMode) return;
+    if (segments?.[0] !== '(tabs)') return;
+    if (segments?.[1] === 'tasks') return;
+    router.replace('/tasks');
+  }, [focusMode, router, segments]);
 
   const iconSize = 24 + Math.min(4, Math.max(0, contrastIntensity));
 
@@ -47,6 +59,7 @@ export default function TabsLayout() {
         options={{
           title: 'Painel',
           tabBarAccessibilityLabel: 'Painel cognitivo',
+          href: focusMode ? null : undefined,
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? 'apps' : 'apps-outline'}
@@ -75,6 +88,7 @@ export default function TabsLayout() {
         options={{
           title: 'Configurações',
           tabBarAccessibilityLabel: 'Configurações e preferências',
+          href: focusMode ? null : undefined,
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? 'settings' : 'settings-outline'}

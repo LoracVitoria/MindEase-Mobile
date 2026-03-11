@@ -33,17 +33,43 @@ function ChoiceRow({
   const labelStyle = useCognitiveTextStyle({ weight: '600' });
   const helperStyle = useCognitiveTextStyle();
 
+  const isThreeOptions = options.length === 3;
+  const threeOptionGap = Math.min(buttonGap, 8);
+
   return (
     <View style={{ gap: 10 }}>
       <Text style={[labelStyle, { color: foreground }]}>{label}</Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: buttonGap }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          flexWrap: isThreeOptions ? 'nowrap' : 'wrap',
+          gap: isThreeOptions ? threeOptionGap : buttonGap,
+          width: '100%',
+        }}
+      >
         {options.map((opt) => (
+          // Em linhas com 3 opções (ex.: complexidade), ajustamos o flex para:
+          // - manter tudo em uma linha
+          // - evitar quebra de texto
+          // - se sobrar espaço na linha, dividir igualmente entre os 3 botões
           <Button
             key={opt.key}
             title={opt.title}
             variant={opt.key === value ? 'primary' : 'secondary'}
             onPress={() => onChange(opt.key)}
-            style={{ minWidth: 110 }}
+            style={
+              isThreeOptions
+                ? {
+                    flexGrow: 1,
+                    flexShrink: 1,
+                    flexBasis: 'auto',
+                    minWidth: 0,
+                    paddingHorizontal: 10,
+                  }
+                : { minWidth: 110 }
+            }
+            textNumberOfLines={isThreeOptions ? 1 : undefined}
+            textEllipsizeMode={isThreeOptions ? 'tail' : undefined}
           />
         ))}
       </View>
@@ -102,8 +128,8 @@ export function PanelScreen() {
           label="Nível de complexidade"
           value={settings.complexityLevel}
           options={[
-            { key: 'simple', title: 'Simples' },
-            { key: 'standard', title: 'Padrão' },
+            { key: 'simple', title: 'Básico' },
+            { key: 'standard', title: 'Normal' },
             { key: 'advanced', title: 'Avançado' },
           ]}
           onChange={(k) => settings.setComplexity(k as any)}
@@ -140,8 +166,6 @@ export function PanelScreen() {
       </Card>
 
       <Card style={{ gap }}>
-        <Text style={[sectionTitleStyle, { color: foreground }]}>Leitura e espaçamento</Text>
-
         <StepperRow
           label="Contraste"
           valueLabel={String(settings.contrastIntensity)}
@@ -177,12 +201,11 @@ export function PanelScreen() {
       </Card>
 
       <Card style={{ gap }}>
-        <Text style={[sectionTitleStyle, { color: foreground }]}>Alertas Cognitivos</Text>
         <ToggleRow
-          label="Ativar alertas"
+          label="Alertas cognitivos"
           value={settings.cognitiveAlertsEnabled}
           onChange={settings.setCognitiveAlerts}
-          description="Ex.: “Você está muito tempo nesta tarefa”"
+          description="Lembra se você ficou muito tempo na mesma tarefa"
         />
 
         <ToggleRow

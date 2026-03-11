@@ -2,7 +2,7 @@ import { useThemeColor } from '@/shared/hooks/use-theme-color';
 import { useSettingsStore } from '@/shared/stores/settings-store';
 import { useCognitiveTextStyle } from '@/shared/ui/cognitive-styles';
 import React from 'react';
-import { Pressable, Text, ViewStyle } from 'react-native';
+import { Pressable, Text, type TextStyle, ViewStyle } from 'react-native';
 
 type Variant = 'primary' | 'secondary' | 'ghost';
 
@@ -12,19 +12,29 @@ export function Button({
   variant = 'primary',
   disabled,
   style,
+  textStyle,
+  textNumberOfLines,
+  textEllipsizeMode,
+  textAdjustsFontSizeToFit,
+  textMinimumFontScale,
 }: {
   title: string;
   onPress?: () => void;
   variant?: Variant;
   disabled?: boolean;
   style?: ViewStyle;
+  textStyle?: TextStyle;
+  textNumberOfLines?: number;
+  textEllipsizeMode?: 'head' | 'middle' | 'tail' | 'clip';
+  textAdjustsFontSizeToFit?: boolean;
+  textMinimumFontScale?: number;
 }) {
   const primary = useThemeColor({}, 'primary');
   const primaryFg = useThemeColor({}, 'primaryForeground');
   const border = useThemeColor({}, 'border');
   const card = useThemeColor({}, 'card');
   const foreground = useThemeColor({}, 'foreground');
-  const textStyle = useCognitiveTextStyle({ weight: '600' });
+  const baseTextStyle = useCognitiveTextStyle({ weight: '600' });
   const animationsEnabled = useSettingsStore((s) => s.animationsEnabled);
   const contrastIntensity = useSettingsStore((s) => s.contrastIntensity);
 
@@ -57,7 +67,15 @@ export function Button({
         style,
       ]}
     >
-      <Text style={[textStyle, { color }]}>{title}</Text>
+      <Text
+        numberOfLines={textNumberOfLines}
+        ellipsizeMode={textEllipsizeMode}
+        adjustsFontSizeToFit={textAdjustsFontSizeToFit}
+        minimumFontScale={textMinimumFontScale}
+        style={[baseTextStyle, { color }, textStyle]}
+      >
+        {title}
+      </Text>
     </Pressable>
   );
 }
